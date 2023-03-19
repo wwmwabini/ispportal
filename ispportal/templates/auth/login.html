@@ -1,0 +1,78 @@
+{% extends 'auth/layout.html' %}
+
+{% block authcontent %}
+
+    <div class="container">
+
+        <!-- Outer Row -->
+        <div class="row justify-content-center">
+
+            <div class="col-xl-10 col-lg-12 col-md-9">
+
+                <div class="card o-hidden border-0 shadow-lg my-5">
+                    <div class="card-body p-0">
+                        <!-- Nested Row within Card Body -->
+                        <div class="row">
+                            <div class="col-lg-6 d-none d-lg-block"></div>
+                            <div class="col-lg-6">
+                                <div class="p-5">
+                                    <div class="text-center">
+                                        <h1 class="h4 text-gray-900 mb-4">Login</h1>
+                                    </div>
+
+                                    <form action="" method="POST" class="row g-3">
+                                          {{ form.csrf_token }}
+
+
+                                          <div class="">
+                                              {{ form.username.label(class="form-label")}}
+
+                                              {% if form.username.errors %}
+                                                {{ form.username(class="form-control form-control-lg is-invalid")}}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.username.errors %}
+                                                      <span> {{ error }} </span>
+                                                    {%endfor%}
+                                                </div>
+                                              {% else %}
+                                                {{ form.username(class="form-control form-control-lg")}}
+                                              {% endif %}
+                                          </div>
+                                          <div class="">
+                                            {{ form.password.label(class="form-label")}}
+                                            {% if form.password.errors %}
+                                              {{ form.password(class="form-control form-control-lg is-invalid") }}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.password.errors %}
+                                                      <span> {{ error }} </span>
+                                                    {%endfor%}
+                                                </div>
+                                            {% else %}
+                                              {{form.password(class="form-control form-control-lg")}}
+                                            {% endif %}
+                                          </div>
+
+                                          <div class="mt-3">
+                                            {{ form.submit(class="btn btn-primary btn-lg")}}
+                                          </div>
+                                        </form>
+
+                                    <hr>
+                                    <div class="text-center">
+                                        <a class="small" href="{{ url_for('forgotusername')}}">Forgot Username</a> || <a class="small" href="{{ url_for('forgotpassword')}}">Forgot Password</a>
+                                    </div>
+                                    <div class="text-center">
+                                        <a class="small" href="{{ url_for('register')}}">Create an Account</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+{% endblock authcontent %}

@@ -1,0 +1,11 @@
+Version 1
+login
+register -  to redirect to subscription page
+forgot password
+logout
+dashboard
+profile
+topup -  to add credit to account
+transaction history
+renew to renew subscription
+upgrade/downgrade subscription
