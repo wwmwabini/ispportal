@@ -1,10 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField
+from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 
 from ispportal.models import Clients
 
 class RegisterForm(FlaskForm):
+	plan = BooleanField("To register, you must subscribe to a package. Select one below:")
 	firstname = StringField("First Name", validators=[DataRequired(), Length(min=2, max=50)])
 	lastname = StringField("Last Name", validators=[DataRequired(), Length(min=2, max=50)])
 	email = EmailField("Email Address", validators=[DataRequired(), Length(min=4, max=100)])

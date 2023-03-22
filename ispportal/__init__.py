@@ -5,7 +5,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
+from flask_migrate import Migrate
+
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -15,7 +18,7 @@ app = Flask(__name__)
 
 #database
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/ispportal.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////home/mwabini/ispportal.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -29,6 +32,7 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 mail = Mail(app)

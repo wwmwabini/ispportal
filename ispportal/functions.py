@@ -30,6 +30,37 @@ def createsecurepassword():
 	return securepassword
 
 
+def create_subscription(username, clientid, planid):
+
+	hostname = username + 'rawle.local'
+	node = 'pve'
+	vmid = random.randint(1,9999)
+	password = ''.join((secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(10)))
+	
+	plan_details = Plans.query.filter_by(planid).first()
+	
+	ostemplate = plan_details.ostemplate
+	bwlimit = plan_details.bwlimit
+	cores = plan_details.cores
+	memory = plan_details.memory 
+	start = plan_details.start 
+	rootfs = plan_details.rootfs
+	storage = plan_details.storage
+	ostype = plan_details.ostype
+
+	#send details to api.
+	#if successful, update subscription record - status and password
+	#send email confirmation
+	hashedpassword = bcrypt.generate_password_hash(password).decode('utf-8')
+	status = 'pending'
+
+	return 0
+
+
+
+
+
+
 
 #Registration welcome message
 def welcomeemail(email, firstname, username):

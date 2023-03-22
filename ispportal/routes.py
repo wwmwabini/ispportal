@@ -14,20 +14,54 @@ def home():
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
+	plans = [
+	{
+	'plan':'Bronze',
+	'price':'1500',
+	'id':'bronze'
+	},
+	{
+	'plan':'Silver',
+	'price':'2500',
+	'id':'silver'
+	},
+	{
+	'plan':'Gold',
+	'price':'3500',
+	'id':'gold'
+	}
+	]
+
+
 	form = RegisterForm()
 
 	if form.validate_on_submit():
 
+		
+
 		username = createusername(form.email.data)
 		hashedpassword = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+		clientplan = 'bronze' #get this from form after submission
 
-		user = Clients(firstname=form.firstname.data, lastname=form.lastname.data, email=form.email.data, phone=form.phone.data, username=username, password=hashedpassword)
-		db.session.add(user)
+		client = Clients(firstname=form.firstname.data, lastname=form.lastname.data, email=form.email.data, phone=form.phone.data, username=username, password=hashedpassword)
+		db.session.add(client)
 		db.session.commit()
 
+		subscriber = Clients.query.filter_by(username=username).first()
+		plan = Plans.query.filter_by(name=clientplan).first()
+
+
+		#send client welcome emails
 		try:
 			remindusernameviaemail(form.email.data, username)
 			welcomeemail(form.email.data, form.firstname.data, username)
+		except Exception as e:
+			print(e)
+
+
+		#create subscription. will be updated to create only after payment is successful
+		try:
+			create_subscription(username, subscriber.id, plan.id)
 		except Exception as e:
 			print(e)
 
@@ -36,7 +70,7 @@ def register():
 
 		return redirect('login')
 
-	return render_template('auth/register.html', title='Register', form=form)
+	return render_template('auth/register.html', title='Register', form=form, plans=plans)
 
 
 @app.route("/login", methods=["GET", "POST"])
