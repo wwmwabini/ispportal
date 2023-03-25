@@ -1,11 +1,13 @@
-import random, re, os, requests, secrets, string
+import random, re, os, requests, secrets, string, time, json
 
-from ispportal.models import Clients
-from flask import render_template
+from ispportal.models import Clients, Plans, Subscriptions
+
+from flask import render_template, jsonify
 from flask_mail import Message
 from dotenv import load_dotenv
+from datetime import datetime
 
-from ispportal import mail
+from ispportal import mail, app, bcrypt, db
 
 load_dotenv()
 
@@ -30,34 +32,107 @@ def createsecurepassword():
 	return securepassword
 
 
-def create_subscription(username, clientid, planid):
+#Create a random unique vmid
+def create_vmid():
+	vmid = random.randint(200,9999)
+	sub = Subscriptions.query.filter_by(vmid=vmid).first()
 
-	hostname = username + 'rawle.local'
-	node = 'pve'
-	vmid = random.randint(1,9999)
-	password = ''.join((secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(10)))
-	
-	plan_details = Plans.query.filter_by(planid).first()
-	
-	ostemplate = plan_details.ostemplate
-	bwlimit = plan_details.bwlimit
-	cores = plan_details.cores
-	memory = plan_details.memory 
-	start = plan_details.start 
-	rootfs = plan_details.rootfs
-	storage = plan_details.storage
-	ostype = plan_details.ostype
+	if sub:
+		create_vmid()
+	else:
+		return vmid
 
-	#send details to api.
-	#if successful, update subscription record - status and password
-	#send email confirmation
-	hashedpassword = bcrypt.generate_password_hash(password).decode('utf-8')
+#Create a subscription
+def create_subscription(username, clientid, planid, clientemail):
+
+	proxmox_host = os.environ.get('PROXMOX_HOST')
+	proxmox_port = str(os.environ.get('PROXMOX_PORT'))
+	proxmox_apitoken = os.environ.get('PROXMOX_API_TOKEN')
+	proxmox_node = 'pve'
+	proxmox_password = ''.join((secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(10)))
+	plan_details = Plans.query.filter_by(id=planid).first()
+
+
+	headers = {
+	'Authorization': proxmox_apitoken
+	}
+
+	params = {
+
+	'hostname': username + '.rawle.local',
+	'node': proxmox_node,
+	'vmid': create_vmid(),
+	'password': proxmox_password,
+	'ostemplate': plan_details.ostemplate,
+	'bwlimit': plan_details.bwlimit,
+	'cores': plan_details.cores,
+	'memory': plan_details.memory,
+	'start': plan_details.start, 
+	'rootfs': plan_details.rootfs,
+	'storage': plan_details.storage,
+	'ostype': plan_details.ostype
+
+	}
+
+	#send email confirmation containing success message, username, password and subscription details
+	hashedpassword = bcrypt.generate_password_hash(proxmox_password).decode('utf-8')
 	status = 'pending'
 
-	return 0
+	creation_endpoint = '/api2/json/nodes/'+proxmox_node+'/lxc'
+	url1 = 'https://'+proxmox_host + ':' + proxmox_port + creation_endpoint
+
+	
+
+	sub = Subscriptions(
+		orderdate=datetime.now(),
+		hostname = params['hostname'],
+		node = params['node'],
+		vmid = params['vmid'],
+		password = hashedpassword,
+		status = status,
+		client_id = clientid,
+		plan_id = planid
+	)
+	db.session.add(sub)
+	db.session.commit()
+
+	response = requests.post(url1, params=params,headers=headers,verify=False)
+
+	print('response.status_code', response.status_code)
+
+
+	if response.status_code == 200:
+		print('success')
+		sendorderconfirmation(params['vmid'], params['password'], plan_details.name, clientemail)
+	else:
+		print('error status code:', response.status_code, response.text)
+
+
+	time.sleep(30)
+
+	#get vm status after seconds above
+	status_endpoint = '/api2/json/nodes/'+proxmox_node+'/lxc/'+str(params['vmid'])+'/status/current'
+	url2 = 'https://'+proxmox_host + ':' + proxmox_port + status_endpoint
+	service_data = requests.get(url2, headers=headers, verify=False) # returns stopped|running, among other things as a string.
+
+	json_service_data = json.loads(service_data.text)
+	service_status = json_service_data['data']['status']
 
 
 
+	if service_status == 'running':
+		sub = Subscriptions.query.filter_by(vmid=params['vmid']).first()
+		sub.status = 'active'
+		db.session.commit()
+	else:
+		print('Service is in stopped status! Contact admin')
+
+	return response.text
+
+
+
+def get_subscription_details(vmid):
+	pass
 
 
 
@@ -88,6 +163,23 @@ def sendresetpassword(email, password):
 	mail.send(msg)
 
 	return 0
+
+#Send order setup completed confirmation
+def sendorderconfirmation(vmid, password, plan, email):
+	subscription = Subscriptions.query.filter_by(vmid=vmid).first()
+	client = Clients.query.filter_by(email=email).first()
+
+	expirydate = subscription.expirydate.strftime('%d/%m/%Y')
+
+
+
+	msg = Message("Order Completed", sender=(os.environ.get('MAIL_DEFAULT_SENDER_NAME'), os.environ.get('MAIL_DEFAULT_SENDER')), recipients=[email])
+	msg.html = render_template('dashboard/message_ordercompleted.html', firstname=client.firstname, lastname=client.lastname,  
+		hostname=subscription.hostname, password=password,
+		plan=subscription.plan.name, expirydate=expirydate)
+	msg.reply_to = os.environ.get('MAIL_DEFAULT_SENDER')
+	mail.send(msg)
+
 
 #Send username via sms
 def remindusernameviasms(phone, username):

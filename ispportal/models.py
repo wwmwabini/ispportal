@@ -1,5 +1,5 @@
 from ispportal import db, app, login_manager
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 
 
@@ -16,11 +16,12 @@ class Clients(db.Model, UserMixin):
 	username = db.Column(db.String(15), nullable=False, unique=True)
 	password = db.Column(db.String(60), nullable=False)
 	registrationdate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-	subscriptions = db.relationship('Clients', backref='subscriber')
+	subscriptions = db.relationship('Subscriptions', backref='client')
 
 class Subscriptions(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 	orderdate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+	expirydate = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(days=30))
 	#plan = db.Column(db.String(10), nullable=False, unique=True)
 	hostname = db.Column(db.String(100))
 	node = db.Column(db.String(100))
@@ -41,4 +42,4 @@ class Plans(db.Model):
 	rootfs = db.Column(db.String(100))
 	storage = db.Column(db.String(100))
 	ostype = db.Column(db.String(100), default='ubuntu')
-	subscriptions = db.relationship('Plans', backref='plan')
+	subscriptions = db.relationship('Subscriptions', backref='plan')

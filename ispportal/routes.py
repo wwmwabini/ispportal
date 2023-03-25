@@ -3,8 +3,8 @@ from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 
 from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword
-from ispportal.models import Clients
-from ispportal.functions import createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword
+from ispportal.models import Clients, Plans, Subscriptions
+from ispportal.functions import createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -50,20 +50,23 @@ def register():
 		subscriber = Clients.query.filter_by(username=username).first()
 		plan = Plans.query.filter_by(name=clientplan).first()
 
+		print('plan id:', plan.id)
+
 
 		#send client welcome emails
 		try:
-			remindusernameviaemail(form.email.data, username)
-			welcomeemail(form.email.data, form.firstname.data, username)
+			print('username',username)
+			#remindusernameviaemail(form.email.data, username)
+			#welcomeemail(form.email.data, form.firstname.data, username)
 		except Exception as e:
 			print(e)
 
 
 		#create subscription. will be updated to create only after payment is successful
-		try:
-			create_subscription(username, subscriber.id, plan.id)
-		except Exception as e:
-			print(e)
+		#try:
+		create_subscription(username, subscriber.id, plan.id, form.email.data)
+		#except Exception as e:
+		#	print(e)
 
 		message = "Thank you for registering. You can now login using your generated username: " + username
 		flash(message, 'success')
