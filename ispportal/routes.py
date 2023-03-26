@@ -3,8 +3,9 @@ from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 
 from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword
-from ispportal.models import Clients, Plans, Subscriptions
-from ispportal.functions import createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription
+from ispportal.models import Clients, Plans, Subscriptions, News
+from ispportal.functions import (createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription,
+	get_node_status, get_service_status)
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -166,7 +167,12 @@ def logout():
 @app.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
-	return render_template('dashboard/dashboard.html', title='Dashboard')
+	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
+	servicestatus = get_service_status(subscription.vmid)
+	nodestatus = get_node_status(subscription.node)
+	news = News.query.order_by(News.created_at.desc()).limit(3).all()
+
+	return render_template('dashboard/dashboard.html', title='Dashboard', subscription=subscription, servicestatus=servicestatus, nodestatus=nodestatus, news=news)
 
 
 @app.route("/customer/profile", methods=["GET", "POST"])

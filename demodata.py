@@ -1,6 +1,10 @@
 from ispportal import db, app
 
-from ispportal.models import Clients, Plans, Subscriptions
+from ispportal.models import *
+
+from faker import Faker
+
+fake = Faker()
 
 def insert_plans():
 	with app.app_context():
@@ -16,4 +20,30 @@ def insert_plans():
 
 	return 0
 
-insert_plans()
+def insert_nodes():
+	with app.app_context():
+		pve = Nodes(name='pve',ipv4address='192.168.0.11', ipv6address='', status='online')
+
+		db.session.add(pve)
+		db.session.commit()
+
+	return 0
+
+def generate_fake_news(count=10):
+	with app.app_context():
+	    for i in range(count):
+	        news = News(
+	            author=fake.name(),
+	            title=fake.sentence(),
+	            content=fake.text(),
+	            category=fake.random_element(elements=('Announcement', 'News', 'Update', 'Alert')),
+	            created_at=fake.date_time_between(start_date='-5d', end_date='now'),
+	        )
+	        db.session.add(news)
+	    db.session.commit()
+
+	return 0
+
+#insert_plans()
+#insert_nodes()
+generate_fake_news()

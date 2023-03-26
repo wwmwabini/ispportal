@@ -16,24 +16,25 @@ class Clients(db.Model, UserMixin):
 	username = db.Column(db.String(15), nullable=False, unique=True)
 	password = db.Column(db.String(60), nullable=False)
 	registrationdate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+	region = db.Column(db.Enum('Thika'), nullable=False, server_default="Thika")
 	subscriptions = db.relationship('Subscriptions', backref='client')
 
 class Subscriptions(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 	orderdate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 	expirydate = db.Column(db.DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(days=30))
-	#plan = db.Column(db.String(10), nullable=False, unique=True)
 	hostname = db.Column(db.String(100))
 	node = db.Column(db.String(100))
 	vmid = db.Column(db.Integer, nullable=False, unique=True)
 	password = db.Column(db.String(60))
-	status = db.Column(db.Enum('pending','stopped','deleted','active'), nullable=False, server_default="pending")
+	status = db.Column(db.Enum('pending','suspended','stopped','deleted','running','unknown'), nullable=False, server_default="pending")
 	client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
 	plan_id = db.Column(db.Integer, db.ForeignKey('plans.id'))
 
 class Plans(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 	name = db.Column(db.String(10), nullable=False, unique=True)
+	price = db.Column(db.Numeric(precision=8, scale=2), nullable=True)
 	ostemplate = db.Column(db.String(100))
 	bwlimit = db.Column(db.Integer, default=0)
 	cores = db.Column(db.Integer)
@@ -43,3 +44,21 @@ class Plans(db.Model):
 	storage = db.Column(db.String(100))
 	ostype = db.Column(db.String(100), default='ubuntu')
 	subscriptions = db.relationship('Subscriptions', backref='plan')
+
+class Nodes(db.Model):
+	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+	name = db.Column(db.String(100), nullable=False, unique=True)
+	ipv4address = db.Column(db.String(12), nullable=False, unique=True)
+	ipv6address = db.Column(db.String(256), nullable=False, unique=True)
+	status = db.Column(db.Enum('online', 'offline', 'unknown'), nullable=False, server_default='unknown')
+	create_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+	last_update = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class News(db.Model):
+	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+	author = db.Column(db.String(100), nullable=False, default='Admin')
+	title = db.Column(db.String(500), nullable=False)
+	content = db.Column(db.Text, nullable=False)
+	category = db.Column(db.Enum('Announcement', 'News', 'Update', 'Alert'), nullable=False, default='Announcement')
+	created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+	last_update = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -11,6 +11,13 @@ from ispportal import mail, app, bcrypt, db
 
 load_dotenv()
 
+
+#overrall variables
+proxmox_host = os.environ.get('PROXMOX_HOST')
+proxmox_port = str(os.environ.get('PROXMOX_PORT'))
+proxmox_apitoken = os.environ.get('PROXMOX_API_TOKEN')
+proxmox_node = 'pve'
+
 #Create random username on registration of new account
 def createusername(email):
 
@@ -26,7 +33,7 @@ def createusername(email):
 		return username
 
 
-#Create random password
+#Create random password for client area login
 def createsecurepassword():
 	securepassword = ''.join((secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(10)))
 	return securepassword
@@ -45,10 +52,6 @@ def create_vmid():
 #Create a subscription
 def create_subscription(username, clientid, planid, clientemail):
 
-	proxmox_host = os.environ.get('PROXMOX_HOST')
-	proxmox_port = str(os.environ.get('PROXMOX_PORT'))
-	proxmox_apitoken = os.environ.get('PROXMOX_API_TOKEN')
-	proxmox_node = 'pve'
 	proxmox_password = ''.join((secrets.choice(string.ascii_letters + string.digits + string.punctuation) for i in range(10)))
 	plan_details = Plans.query.filter_by(id=planid).first()
 
@@ -134,6 +137,57 @@ def create_subscription(username, clientid, planid, clientemail):
 def get_subscription_details(vmid):
 	pass
 
+
+#Get the status of the node, whether online or offline etc
+def get_node_status(node):
+
+	#node_endpoint = '/api2/json/nodes/'+node+'/status'
+	node_endpoint = '/api2/json/cluster/status'
+	url = 'https://'+proxmox_host + ':' + proxmox_port + node_endpoint
+
+	headers = {
+	'Authorization': proxmox_apitoken
+	}
+
+	try:
+		node_data = requests.get(url, headers=headers, verify=False)
+		json_node_data = json.loads(node_data.text)
+		node_status_boolean = json_node_data['data'][0]['online']
+		if node_status_boolean == 1:
+			node_status = 'online'
+		else:
+			node_status = 'offline'
+	except Exception as e:
+		return 'offline'
+
+	return node_status
+
+
+#Get the status of the vm/service, whether online or offline etc
+def get_service_status(vmid):
+
+	service_endpoint = '/api2/json/nodes/'+proxmox_node+'/lxc/'+str(vmid)+'/status/current'
+	url = 'https://'+proxmox_host + ':' + proxmox_port + service_endpoint
+
+	headers = {
+	'Authorization': proxmox_apitoken
+	}
+
+	try:
+		service_data = requests.get(url, headers=headers, verify=False)
+
+		json_service_data = json.loads(service_data.text)
+		status = json_service_data['data']['status']
+		print('status', status)
+		if status == 'running':
+			service_status = 'running'
+		else:
+			service_status = 'stopped'
+			print(service_status)
+	except Exception as e:
+		return 'unknown'
+
+	return service_status
 
 
 

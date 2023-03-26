@@ -45,4 +45,3 @@ def unauthorized():
 
 
 from ispportal import routes
-import api_v1
