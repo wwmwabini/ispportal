@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField
+from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField, RadioField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 
 from ispportal.models import Clients
@@ -68,3 +68,9 @@ class ForgotPassword(FlaskForm):
 		username = Clients.query.filter_by(username=username.data).first()
 		if not username:
 			raise ValidationError('Username does not exist in our system. Please try again')
+
+
+class RenewSubscriptionForm(FlaskForm):
+	paymentmethod = RadioField("Select payment method", choices=[('mpesa', 'Pay with MPESA'), ('paypal', 'Pay with PayPal'), ('card', 'Pay with Credit Card')])
+	paymentreference = StringField("MPESA transaction code", validators=[DataRequired()])
+	submit = SubmitField("Submit")

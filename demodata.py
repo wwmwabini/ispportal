@@ -44,6 +44,9 @@ def generate_fake_news(count=10):
 
 	return 0
 
-#insert_plans()
-#insert_nodes()
+def insert_transactions():
+	with app.app_context():
+		#add fake transactions
+insert_plans()
+insert_nodes()
 generate_fake_news()

@@ -1,9 +1,10 @@
 from ispportal import app, bcrypt, db
 from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
+from datetime import datetime, timedelta
 
-from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword
-from ispportal.models import Clients, Plans, Subscriptions, News
+from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm
+from ispportal.models import Clients, Plans, Subscriptions, News, Transactions, Payments
 from ispportal.functions import (createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription,
 	get_node_status, get_service_status)
 
@@ -175,6 +176,47 @@ def dashboard():
 	return render_template('dashboard/dashboard.html', title='Dashboard', subscription=subscription, servicestatus=servicestatus, nodestatus=nodestatus, news=news)
 
 
+@app.route("/customer/subscription/renew", methods=["GET", "POST"])
+@login_required
+def renew_subscription():
+
+	subscriptions = Subscriptions.query.filter_by(client_id=current_user.id).all()
+
+	form = RenewSubscriptionForm()
+
+	if form.validate_on_submit():
+		mpesacode = form.paymentreference.data.upper()
+		transaction = Transactions.query.filter_by(transaction_id=mpesacode).first()
+
+		if not transaction:
+			flash('Payment has not been received yet. Try again after a minute', 'info')
+			return redirect('renew_subscription')
+		else:
+			if transaction.claimed is True:
+				flash('The transaction has already been claimed.', 'warning')
+				return redirect('renew_subscription')
+			else:
+
+				"""
+				- check if amount paid is enough, if should not be claimed
+				- check if service status is suspended and unsuspend
+				- notify client on successful renewal
+				- redirect client to thank you page
+				"""
+
+				transaction.claimed = True
+				sub = Subscriptions.query.filter_by(id=subscriptions.id).first() # this should be updated in the future if a client can have > 1 subscriptions
+				sub.expirydate=sub.expirydate + timedelta(days=30)
+				
+
+
+
+			
+
+
+	return render_template('dashboard/renew_subscription.html', title="Subscription Renewal", subscriptions=subscriptions, form=form)
+
+
 @app.route("/customer/profile", methods=["GET", "POST"])
 @login_required
 def profile():
@@ -190,10 +232,6 @@ def transactions():
 def datausage():
 	return render_template('dashboard/datausage.html', title="Data Usage")
 
-@app.route("/customer/subscription/renew", methods=["GET", "POST"])
-@login_required
-def renew_subscription():
-	return render_template('dashboard/renew_subscription.html', title="Subscription Renewal")
 
 @app.route("/customer/subscription/credit", methods=["GET", "POST"])
 @login_required
