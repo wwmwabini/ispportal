@@ -125,7 +125,7 @@ def create_subscription(username, clientid, planid, clientemail):
 
 	if service_status == 'running':
 		sub = Subscriptions.query.filter_by(vmid=params['vmid']).first()
-		sub.status = 'active'
+		sub.status = 'running'
 		db.session.commit()
 	else:
 		print('Service is in stopped status! Contact admin')

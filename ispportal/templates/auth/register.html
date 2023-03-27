@@ -34,15 +34,24 @@
                                                     {%endfor%}
                                                 </div>
                                             {% else %}
-                                              <div class="row row-cols-1 row-cols-md-3 g-4">
-                                                {% for plan in plans %}
+
+                                              <div class="row row-copls-1 row-cols-md-3 g-4">
+                                                {% for subfield in form.plan %}
                                                 <div class="col px-1">
-                                                  <div class="card" style="width: 7rem;">
+                                                  <div class="card" style="width: 7.5rem;">
                                                     <div class="card-body">
-                                                      <h5 class="card-title ">{{plan.plan}}</h5>
-                                                      <p class="card-text">sh{{plan.price}}</p>
+                                                      <h5 class="card-title capitalize">{{subfield.label}}</h5>
+                                                      {% if subfield.data == 'bronze' %}
+                                                      <p class="card-text">sh{{bronze_price}}</p>
+                                                      {% elif subfield.data == 'silver' %}
+                                                      <p class="card-text">sh{{silver_price}}</p>
+                                                      {% elif subfield.data == 'gold' %}
+                                                      <p class="card-text">sh{{gold_price}}</p>
+                                                      {% else %}
+                                                      <p class="card-text">sh0</p>
+                                                      {% endif %}
                                                       <div class="form-check form-switch text-center">
-                                                        {{ form.plan(class="form-check-input", id=plan.id, value=plan.id)}}
+                                                        {{ subfield(class="form-check-input")}}
                                                       </div>
                                                     </div>
                                                   </div>

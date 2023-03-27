@@ -123,12 +123,10 @@
                                     {% if subscription.status == 'running' %}
                                           
                                         <h4 class="small font-weight-bold">
-                                            Subscription Status <span class="float-right">Signal Strength: 100%</span>
+                                            Subscription Status <span class="float-right"><strong class="ml-5 text-capitalize">{{subscription.status}}</strong></span>
                                         </h4>
                                         <div class="d-flex align-items-center">
-                                            
                                             <div class="spinner-grow ms-auto text-success" style="width: 1.5rem; height: 1.5rem;" role="status" aria-hidden="true"></div>
-                                            <strong class="ml-5 text-capitalize">{{subscription.status}}</strong>
                                         </div>
                                     {% elif subscription.status == 'pending' or subscription.status == "suspended" %}
                                         <h4 class="small font-weight-bold">

@@ -16,23 +16,17 @@ def home():
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
-	plans = [
-	{
-	'plan':'Bronze',
-	'price':'1500',
-	'id':'bronze'
-	},
-	{
-	'plan':'Silver',
-	'price':'2500',
-	'id':'silver'
-	},
-	{
-	'plan':'Gold',
-	'price':'3500',
-	'id':'gold'
-	}
-	]
+	plans = Plans.query.all()
+
+	bronze_price, silver_price, gold_price = 0, 0, 0
+	for p in plans:
+		if p.name == 'bronze':
+			bronze_price = int(p.price)
+		elif p.name == 'silver':
+			silver_price = int(p.price)
+		else:
+			gold_price = int(p.price)
+
 
 
 	form = RegisterForm()
@@ -43,39 +37,37 @@ def register():
 
 		username = createusername(form.email.data)
 		hashedpassword = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-		clientplan = 'bronze' #get this from form after submission
 
 		client = Clients(firstname=form.firstname.data, lastname=form.lastname.data, email=form.email.data, phone=form.phone.data, username=username, password=hashedpassword)
 		db.session.add(client)
 		db.session.commit()
 
 		subscriber = Clients.query.filter_by(username=username).first()
-		plan = Plans.query.filter_by(name=clientplan).first()
+		plan = Plans.query.filter_by(name=form.plan.data).first()
 
-		print('plan id:', plan.id)
 
 
 		#send client welcome emails
 		try:
 			print('username',username)
-			#remindusernameviaemail(form.email.data, username)
-			#welcomeemail(form.email.data, form.firstname.data, username)
+			remindusernameviaemail(form.email.data, username)
+			welcomeemail(form.email.data, form.firstname.data, username)
 		except Exception as e:
 			print(e)
 
 
 		#create subscription. will be updated to create only after payment is successful
-		#try:
-		create_subscription(username, subscriber.id, plan.id, form.email.data)
-		#except Exception as e:
-		#	print(e)
+		try:
+			create_subscription(username, subscriber.id, plan.id, form.email.data)
+		except Exception as e:
+			print(e)
 
 		message = "Thank you for registering. You can now login using your generated username: " + username
 		flash(message, 'success')
 
 		return redirect('login')
 
-	return render_template('auth/register.html', title='Register', form=form, plans=plans)
+	return render_template('auth/register.html', title='Register', form=form, plans=plans, bronze_price=bronze_price, silver_price=silver_price, gold_price=gold_price)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -89,13 +81,14 @@ def login():
 
 		if user and bcrypt.check_password_hash(user.password, form.password.data):
 			login_user(user, remember=form.remember.data)
-			welcomemessage = 'Welcome back ' + user.username
-			flash(welcomemessage, 'success')
+			
 			redirect_page = request.args.get('next')
 
 			if redirect_page:
 				return redirect(redirect_page)
 			else:
+				welcomemessage = 'Welcome back ' + user.username
+				flash(welcomemessage, 'success')
 				return redirect(url_for('dashboard'))
 		else:
 			flash('Invalid username or password.', 'danger')
@@ -165,7 +158,7 @@ def logout():
 
 
 
-@app.route("/dashboard", methods=["GET", "POST"])
+@app.route("/customer/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
 	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
@@ -196,6 +189,8 @@ def renew_subscription():
 				flash('The transaction has already been claimed.', 'warning')
 				return redirect('renew_subscription')
 			else:
+
+				
 
 				"""
 				- check if amount paid is enough, if should not be claimed
