@@ -200,6 +200,7 @@ def renew_subscription():
 				sub = Subscriptions.query.filter_by(id=subscription.id).first() # this should be updated in the future if a client can have > 1 subscriptions
 
 				transaction.claimed = True
+				transaction.user_id = current_user.id
 				sub.expirydate=sub.expirydate + timedelta(days=30)
 				
 				if subscription.status == 'stopped':
@@ -209,7 +210,7 @@ def renew_subscription():
 				db.session.commit() #commit to db only after all above events have occured.
 
 				flash('Service renewed successfully. Thank you for your continued business and support', 'success')
-				
+				return redirect(url_for('renew_subscription'))
 				
 
 
@@ -253,7 +254,9 @@ def profile():
 @app.route("/customer/activity/transactions", methods=["GET", "POST"])
 @login_required
 def transactions():
-	return render_template('dashboard/transactions.html', title="Transaction History")
+	trans = Transactions.query.filter_by(user_id=current_user.id).all()
+
+	return render_template('dashboard/transactions.html', title="Transaction History", trans=trans)
 
 @app.route("/customer/activity/datausage", methods=["GET", "POST"])
 @login_required
