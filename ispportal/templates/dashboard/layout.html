@@ -25,6 +25,9 @@
     <!-- Custom styles for this template-->
     <link href="{{ url_for('static', filename='css/sb-admin-2.min.css')}}" rel="stylesheet">
 
+    <!-- InstaSend script -->
+    <script src="https://unpkg.com/intasend-inlinejs-sdk@3.0.2/build/intasend-inline.js"></script>
+
 </head>
 
 <body id="page-top" class="d-flex flex-column h-100">
@@ -79,12 +82,12 @@
 
             <!-- Nav Item - Utilities Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseActivity"
                     aria-expanded="true" aria-controls="collapseUtilities">
                     <i class="fas fa-fw fa-wrench"></i>
                     <span>Activity</span>
                 </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
+                <div id="collapseActivity" class="collapse" aria-labelledby="headingActivity"
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Activity Logs:</h6>
@@ -104,12 +107,12 @@
 
             <!-- Nav Item - Utilities Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
-                    aria-expanded="true" aria-controls="collapseUtilities">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseProfile"
+                    aria-expanded="true" aria-controls="collapseProfile">
                     <i class="fas fa-fw fa-wrench"></i>
                     <span>My Profile</span>
                 </a>
-                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
+                <div id="collapseProfile" class="collapse" aria-labelledby="headingProfile"
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Profile:</h6>
@@ -127,7 +130,7 @@
 
             <!-- Sidebar Message -->
             <div class="sidebar-card d-none d-lg-flex">
-                <img class="sidebar-card-illustration mb-2" src="img/undraw_rocket.svg" alt="...">
+                <img class="sidebar-card-illustration mb-2" src="/static/img/undraw_rocket.svg" alt="...">
                 <p class="text-center mb-2"><strong>ISP Portal</strong> is secure and reliable. Click for more details.</p>
                 <a class="btn btn-success btn-sm" href="https://github.com/wwmwabini/ispportal">ISP Portal</a>
             </div>
@@ -223,6 +226,33 @@
         </nav>
         <!-- End of Topbar -->
 
+        <!--Flash Message -->
+          <section class="container ">
+            <div class="d-flex justify-content-center pt-2 bd-highlight align-items-center">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    <div class="alert alert-{{category}}" role="alert">
+                      {% if category == 'success'%}
+                        <i class="bi-check-circle-fill"></i>
+                        {{ message }}
+                      {% elif category == 'info' %}
+                        <i class="bi-info-circle-fill"></i>
+                        {{ message }}
+                      {% elif category == 'warning' %}
+                        <i class="bi-exclamation-triangle-fill"></i>
+                        {{ message }}
+                      {% else %}
+                        <i class="bi-exclamation-octagon-fill"></i>
+                        {{ message }}
+                      {% endif %}
+                    </div>
+                  {%endfor%}
+                {% endif%}
+              {% endwith%}
+            </div>
+          </section>
+        <!--End Flash Message -->
 
 
             {% block content %}
@@ -285,6 +315,18 @@
     <!-- Page level custom scripts -->
     <script src="/static/js/demo/chart-area-demo.js"></script>
     <script src="/static/js/demo/chart-pie-demo.js"></script>
+
+    <script>
+      new window.IntaSend({
+          publicAPIKey: "{{intasend_publishablekey}}",
+          redirectURL: "{{intasend_redirecturl}}",
+          live: {{intasend_liveness}} // set to true when going live
+      })
+      .on("COMPLETE", (results) => console.log(results))
+      .on("FAILED", (results) => console.log(results))
+      .on("IN-PROGRESS", () => console.log("Payment in progress status"))
+    </script>
+
 
 </body>
 

@@ -1,6 +1,6 @@
 import random, re, os, requests, secrets, string, time, json
 
-from ispportal.models import Clients, Plans, Subscriptions
+from ispportal.models import Clients, Plans, Subscriptions, Transactions
 
 from flask import render_template, jsonify
 from flask_mail import Message
@@ -189,6 +189,40 @@ def get_service_status(vmid):
 
 	return service_status
 
+#Unsuspend susbcription
+def unsuspend_subscription(vmid):
+
+	service_endpoint = '/api2/json/nodes/'+proxmox_node+'/qemu/'+str(vmid)+'/status/start'
+	url = 'https://'+proxmox_host + ':' + proxmox_port + service_endpoint
+
+	headers = {
+	'Authorization': proxmox_apitoken
+	}
+
+	params = {
+
+	'node': proxmox_node,
+	'vmid': vmid
+	}
+
+
+	response = requests.post(url, params=params,headers=headers,verify=False)
+
+
+	if response.status_code == 200:
+		return 200
+	else:
+		print('error status code:', response.status_code, response.text)
+		return response.status_code
+
+
+
+
+
+
+'''
+SMS AND EMAIL SENDING FUNCTIONS START HERE
+'''
 
 
 #Registration welcome message
@@ -247,5 +281,16 @@ def remindusernameviasms(phone, username):
 
 	return 0
 
+#Renewal confirmation message
+def renewal_confirmation(client_id, subscription_id, transaction_id):
+	user = Clients.query.filter_by(id=client_id).first()
+	sub = Subscriptions.query.filter_by(id=subscription_id).first()
+	transaction = Transactions.query.filter_by(id=transaction_id).first()
 
+	msg = Message("Subscription Renewal Confirmation", sender=(os.environ.get('MAIL_DEFAULT_SENDER_NAME'), os.environ.get('MAIL_DEFAULT_SENDER')), recipients=[user.email])
+	msg.html = render_template('dashboard/message_renewalconfirmation.html', subscription_hostname=sub.hostname, subscription_expirydate=sub.expirydate, transaction_reference=transaction.transaction_id, date_paid=transaction.updated_at)
+	msg.reply_to = os.environ.get('MAIL_DEFAULT_SENDER')
+	mail.send(msg)
+
+	return 0
 

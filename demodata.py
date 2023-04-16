@@ -1,3 +1,5 @@
+import random, string
+
 from ispportal import db, app
 
 from ispportal.models import *
@@ -44,10 +46,32 @@ def generate_fake_news(count=10):
 
 	return 0
 
-def insert_transactions():
+def insert_transactions(count=10):
 	with app.app_context():
-		#add fake transactions
+		for i in range(count):
+			transaction = Transactions(
+				invoice_id = fake.text(max_nb_chars=5),
+				transaction_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
+				state = fake.random_element(elements=('PROCESSING', 'PENDING', 'COMPLETE', 'FAILED')),
+				charges = 4,
+				net_amount = fake.random_element(elements=(1499, 2499, 3499)),
+				currency = 'KES',
+				value = fake.random_element(elements=(1499, 2499, 3499)),
+				account = fake.email(),
+				api_ref = 'ISL_faa26ef9-eb08-4353-b125-ec6a8f022815',
+				host = 'https://sandbox.intasend.com'
+
+			)
+			db.session.add(transaction)
+			transaction.value = transaction.net_amount
+		db.session.commit()
+
+		transaction.value = transaction.net_amount
+
+	return 0
+
 		
-insert_plans()
-insert_nodes()
-generate_fake_news()
+#insert_plans()
+#insert_nodes()
+#generate_fake_news()
+insert_transactions()

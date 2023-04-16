@@ -1,6 +1,10 @@
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField, RadioField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from flask_login import current_user
+
 
 from ispportal.models import Clients
 
@@ -72,5 +76,25 @@ class ForgotPassword(FlaskForm):
 
 class RenewSubscriptionForm(FlaskForm):
 	paymentmethod = RadioField("Select payment method", choices=[('mpesa', 'Pay with MPESA'), ('paypal', 'Pay with PayPal'), ('card', 'Pay with Credit Card')])
-	paymentreference = StringField("MPESA transaction code", validators=[DataRequired()])
-	submit = SubmitField("Submit")
+	paymentreference = StringField("MPESA transaction code")
+	submit = SubmitField("Pay Now", render_kw={'class': 'btn btn-primary btn-lg intaSendPayButton', 'data-method': 'M-PESA', 'data-amount': '10', 'data-currency': 'KES'})
+
+
+class ProfileForm(FlaskForm):
+	firstname = StringField("First Name", validators=[DataRequired(), Length(min=2, max=50)])
+	lastname = StringField("Last Name", validators=[DataRequired(), Length(min=2, max=50)])
+	email = EmailField("Email Address", validators=[DataRequired(), Length(min=2, max=50)])
+	phone = StringField("Phone", validators=[DataRequired(), Length(min=10, max=10)])
+	submit = SubmitField('Save Changes')
+
+	def validate_phone(form, phone):
+		def is_phone_number_valid(phonenumber):
+			pattern = re.compile(r'^\d{10}$')
+			return pattern.match(phonenumber)
+
+		if not is_phone_number_valid(phone.data):
+			raise ValidationError('Invalid phone number. It should be 10 characters long and use the format of 07xxxxxxxx')
+		
+		
+
+

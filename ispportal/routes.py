@@ -3,10 +3,10 @@ from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
 
-from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm
+from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm, ProfileForm
 from ispportal.models import Clients, Plans, Subscriptions, News, Transactions, Payments
 from ispportal.functions import (createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription,
-	get_node_status, get_service_status)
+	get_node_status, get_service_status, unsuspend_subscription, renewal_confirmation)
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -173,7 +173,7 @@ def dashboard():
 @login_required
 def renew_subscription():
 
-	subscriptions = Subscriptions.query.filter_by(client_id=current_user.id).all()
+	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
 
 	form = RenewSubscriptionForm()
 
@@ -182,40 +182,73 @@ def renew_subscription():
 		transaction = Transactions.query.filter_by(transaction_id=mpesacode).first()
 
 		if not transaction:
-			flash('Payment has not been received yet. Try again after a minute', 'info')
-			return redirect('renew_subscription')
+			flash('Payment has not been received yet. Try again after a minute', 'warning')
+			return redirect(url_for('renew_subscription'))
 		else:
 			if transaction.claimed is True:
-				flash('The transaction has already been claimed.', 'warning')
-				return redirect('renew_subscription')
+				flash('The transaction has already been claimed.', 'danger')
+				return redirect(url_for('renew_subscription'))
 			else:
-
-				
 
 				"""
 				- check if amount paid is enough, if should not be claimed
 				- check if service status is suspended and unsuspend
 				- notify client on successful renewal
-				- redirect client to thank you page
+				- show flash message
 				"""
 
+				sub = Subscriptions.query.filter_by(id=subscription.id).first() # this should be updated in the future if a client can have > 1 subscriptions
+
 				transaction.claimed = True
-				sub = Subscriptions.query.filter_by(id=subscriptions.id).first() # this should be updated in the future if a client can have > 1 subscriptions
 				sub.expirydate=sub.expirydate + timedelta(days=30)
+				
+				if subscription.status == 'stopped':
+					unsuspend_subscription(subscription.vmid)
+				renewal_confirmation(current_user.id, subscription.id, transaction.id)
+
+				db.session.commit() #commit to db only after all above events have occured.
+
+				flash('Service renewed successfully. Thank you for your continued business and support', 'success')
+				
 				
 
 
-
-			
-
-
-	return render_template('dashboard/renew_subscription.html', title="Subscription Renewal", subscriptions=subscriptions, form=form)
+	return render_template('dashboard/renew_subscription.html', title="Subscription Renewal", subscription=subscription, form=form)
 
 
 @app.route("/customer/profile", methods=["GET", "POST"])
 @login_required
 def profile():
-	return render_template('dashboard/profile.html', title="My Profile")
+
+	client = Clients.query.filter_by(id=current_user.id).first()
+
+	form = ProfileForm()
+
+	if form.validate_on_submit():
+		user_email_check = Clients.query.filter_by(email=form.email.data).first()
+		user_phone_check = Clients.query.filter_by(phone=form.phone.data).first()
+
+		if client.email == form.email.data and client.firstname == form.firstname.data and client.lastname == form.lastname.data and client.phone == form.phone.data:
+			flash('You must update at least one field before saving changes.', 'warning')
+			return redirect(url_for('profile'))
+		elif user_email_check and user_email_check.id != current_user.id: #check if user w/ submitted email exists, and is not equal to current user.
+			flash('The email address submitted is already in use in our system. Please try again', 'warning')
+			return redirect(url_for('profile'))
+		elif user_phone_check and user_phone_check.id != current_user.id: #check if user w/ submitted phone exists, and is not equal to current user.
+			flash('The phone number submitted is already in use in our system. Please try again', 'warning')
+			return redirect(url_for('profile'))
+		else:
+			client.firstname = form.firstname.data
+			client.lastname = form.lastname.data
+			client.email = form.email.data
+			client.phone = form.phone.data
+
+			db.session.commit()
+			flash('Your details have been successfully updated.', 'success')
+			return redirect(url_for('profile'))
+
+
+	return render_template('dashboard/profile.html', title="My Profile", form=form)
 
 @app.route("/customer/activity/transactions", methods=["GET", "POST"])
 @login_required

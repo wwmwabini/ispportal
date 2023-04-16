@@ -1,4 +1,107 @@
 {% extends 'dashboard/layout.html' %}
 {% block content %}
-profile
+<section>
+	<div class="container-fluid">
+
+		<div class="card mb-3" style="max-width: 1080px;">
+		  <div class="row g-0">
+		    <div class="col-md-4">
+		      <img class="img-profile text-center p-3" src="/static/img/undraw_profile.svg" style="width: 250px;">
+		    </div>
+		    <div class="col-md-8">
+		      <div class="card-body">
+		        <h5 class="card-title fw-bold">Details</h5>
+		        <p class="card-text">Full Name: {{current_user.firstname}} {{current_user.lastname}}</p>
+		        <p class="card-text">Email: {{current_user.email}}</p>
+		        <p class="card-text">Phone: {{current_user.phone}}</p>
+		        <p class="card-text">Username: {{current_user.username}}</p>
+		        <p class="card-text">Region: {{current_user.region}}</p>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+		<h1 class="pt-3">Change Details</h1>
+		<hr>
+
+
+		<form action="" method="POST" class="row g-3">
+        {{ form.csrf_token }}
+
+        <div class='row g-3 col-6 p-2'>
+        	<div class="">
+            {{ form.firstname.label(class="form-label")}}
+
+            {% if form.firstname.errors %}
+              {{ form.firstname(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.firstname.errors %}
+                      <span> {{ error }} </span>
+                    {%endfor%}
+                </div>
+            {% else %}
+              {{form.firstname(class="form-control form-control-lg", value=current_user.firstname)}}
+            {% endif %}
+          </div>
+         </div>
+
+         <div class='row g-3 col-6 p-2'>
+	          <div class="">
+	            {{ form.lastname.label(class="form-label")}}
+
+	            {% if form.lastname.errors %}
+	              {{ form.lastname(class="form-control is-invalid") }}
+	                <div class="invalid-feedback">
+	                    {% for error in form.lastname.errors %}
+	                      <span> {{ error }} </span>
+	                    {%endfor%}
+	                </div>
+	            {% else %}
+	              {{form.lastname(class="form-control form-control-lg", value=current_user.lastname)}}
+	            {% endif %}
+	          </div>
+          </div>
+
+          <div class='row g-3 col-6 p-2'>
+	          <div class="">
+	            {{ form.email.label(class="form-label")}}
+
+	            {% if form.email.errors %}
+	              {{ form.email(class="form-control is-invalid") }}
+	                <div class="invalid-feedback">
+	                    {% for error in form.email.errors %}
+	                      <span> {{ error }} </span>
+	                    {%endfor%}
+	                </div>
+	            {% else %}
+	              {{form.email(class="form-control form-control-lg", value=current_user.email)}}
+	            {% endif %}
+	          </div>
+          </div>
+
+          <div class='row g-3 col-6 p-2'>
+	          <div class="">
+	            {{ form.phone.label(class="form-label")}}
+
+	            {% if form.phone.errors %}
+	              {{ form.phone(class="form-control is-invalid") }}
+	                <div class="invalid-feedback">
+	                    {% for error in form.phone.errors %}
+	                      <span> {{ error }} </span>
+	                    {%endfor%}
+	                </div>
+	            {% else %}
+	              {{form.phone(class="form-control form-control-lg", value=current_user.phone)}}
+	            {% endif %}
+	          </div>
+          </div>
+          <div class="text-center mb-5">
+          	{{ form.submit(class="btn btn-danger btn-lg")}}
+          </div>
+     </form>
+		
+	</div>
+	
+</section>
+	
 {% endblock content%}

@@ -4,7 +4,6 @@
   
   <h1>Renew Your Subscription</h1>
 
-  {% for subscription in subscriptions %}
 
   <div class="">
 	 <h5 class="">Subscription Details:</h5>
@@ -23,37 +22,48 @@
    	   {% endif %}
       </p>      
   </div>
-  {% endfor %}
 
   <form action="" method="POST" >
+  	{{ form.csrf_token }}
   
 	  <div class="row row-cols-1 row-cols-md-3">
-	    {% for subfield in form.paymentmethod %}
-	    {% if subfield.data == 'mpesa' %}
-	    <div class="col px-3 ">
-	      <div class="card border">
-	        <div class="card-body">
-	          <h5 class="card-title ">{{subfield.label}}</h5>
-	          <div class="form-check form-switch text-center">
-	          	{{ subfield(checked=True, disabled=True, class="card-text form-check-input")}}
-	          </div>
-	        </div>
-	      </div>
-	    </div>
-	    {% else%}
-	    <div class="col px-3 ">
-	      <div class="card border">
-	        <div class="card-body">
-	          <h5 class="card-title ">{{subfield.label}}</h5>
-	          <div class="form-check form-switch text-center">
-	          	{{ subfield(disabled=True, class="card-text form-check-input")}}
-	          </div>
-	        </div>
-	      </div>
-	    </div>
-	    {% endif %}
-	    {% endfor %}
+
+      {% if form.paymentmethod.errors %}
+        {{ form.paymentmethod(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.paymentmethod.errors %}
+                <span> {{ error }} </span>
+              {%endfor%}
+          </div>
+      {% else %}
+		    {% for subfield in form.paymentmethod %}
+			    {% if subfield.data == 'mpesa' %}
+			    <div class="col px-3 ">
+			      <div class="card border">
+			        <div class="card-body">
+			          <h5 class="card-title ">{{subfield.label}}</h5>
+			          <div class="form-check form-switch text-center">
+			          	{{ subfield(checked=True, class="card-text form-check-input")}}
+			          </div>
+			        </div>
+			      </div>
+			    </div>
+			    {% else%}
+			    <div class="col px-3 ">
+			      <div class="card border">
+			        <div class="card-body">
+			          <h5 class="card-title ">{{subfield.label}}</h5>
+			          <div class="form-check form-switch text-center">
+			          	{{ subfield(disabled=True, class="card-text form-check-input")}}
+			          </div>
+			        </div>
+			      </div>
+			    </div>
+			    {% endif %}
+		    {% endfor %}
+		    {% endif %}
 	  </div>
+
 
 	  <div class="mt-5">
         {{ form.paymentreference.label(class="form-label")}}
@@ -61,7 +71,8 @@
         {% if form.paymentreference.errors %}
           {{ form.paymentreference(class="form-control form-control-lg is-invalid") }}
             <div class="invalid-feedback">
-             paymentreference   {% for error in form.paymentreference.errors %}
+             paymentreference   
+             		{% for error in form.paymentreference.errors %}
                   <span> {{ error }} </span>
                 {%endfor%}
             </div>
@@ -71,8 +82,9 @@
       </div>
 
       <div class="mt-3 mb-5">
-        {{ form.submit(class="btn btn-primary btn-lg")}}
+        {{ form.submit()}}
       </div>
+    </form>
 
       <span>*All payments made are subject to our Terms of Service.</span>
 
