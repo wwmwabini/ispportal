@@ -1,0 +1,109 @@
+{% extends 'dashboard/layout.html' %}
+{% block content %}
+<div class="container">
+    <h1>Change Plan</h1>
+
+    <div class="">
+        <p>Your current plan is <strong class="text-capitalize">{{current_plan.name}} - sh. {{current_plan.price}}</strong></p>
+        <hr>
+
+        <p>Select one of the plans to change to from the list below</p>
+        {% if date_today > subscription.expirydate%}
+        <div class="bg-warning">
+            <i class="fa-face-sad-tear"></i>
+            <p>Your subscription is currently expired. Please renew the subscription first to change the plan.</p>
+        </div>
+        
+        {% else %}
+        {% for new_plan in other_plans%}
+        <div class="container shadow p-3">
+            <h5><strong class="text-capitalize">{{new_plan.name}} - sh. {{new_plan.price}}</strong></h5>
+            <p>OS Template: {{new_plan.ostemplate}}</p>
+            {% if new_plan.bwlimit==0 %}
+                <p>Bandwidth: Unlimited</p>
+            {% else %}
+                <p>Bandwidth: {{new_plan.bwlimit}}</p>
+            {% endif %}
+            <p>CPU Cores: {{new_plan.cores}}</p>
+            <p>Memory: {{new_plan.memory}} MB</p>
+            <p>Storage: {{new_plan.storage}}</p>
+            <p>OS Type: {{new_plan.ostype}}</p>
+
+            <a class="btn btn-primary" href="#" data-toggle="modal" data-target="#changePlanModal-{{new_plan.name}}">
+                Select Package
+            </a>
+        </div>
+        <hr>
+
+        <!-- changePlanModal -->
+        <div class="modal fade" id="changePlanModal-{{new_plan.name}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Change Plan Confirmation</h5>
+                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                    {% set upgrade_price = (((subscription.expirydate - date_today).days)*(new_plan.price - current_plan.price)/30)|round(0,'ceil') %}
+                    <div class="modal-body">
+                        <table class="table table-sm">
+                            <thead>
+                            <p>To complete change of plan, please confirm the details below first</p>
+                            <tr>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td class="text-capitalize font-weight-bold">{{current_plan.name}} => {{new_plan.name}}</td>
+                                <td>sh. {{upgrade_price}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                        {% if upgrade_price < 0 %}
+                        <div class="bg-warning text-center text-white">
+                            <small>
+                                You are downgrading to a lower package. By confirming this selection, your subscription will be automatically downgraded at the start
+                                of the next billing cycle ({{subscription.expirydate.strftime('%d/%m/%Y')}})
+                            </small>
+                        </div>
+                        
+                        <div class="modal-footer">
+
+                            <form action="" method="POST">
+                                <input type="hidden" id="subscriptionid" name="subscriptionid" value="{{subscription.id}}">
+                                <input type="hidden" id="newplanid" name="newplanid" value="{{new_plan.id}}">
+                                <input type="hidden" id="expirydate" name="expirydate" value="{{subscription.expirydate}}">
+
+                                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                                <button class="btn btn-danger" type="submit">Schedule Downgrade</button>
+                            </form>
+                        </div>
+
+                        {% else %}
+                        <div class="bg-warning text-center text-white">
+                            <small>Upgrade price is calculated from the difference between today and the service expiry date (i.e {{(subscription.expirydate - date_today).days}} days) multiplied by 
+                                the daily billing rate of the new plan less credit for the remainder of the previous billing plan.
+                            </small>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                            <a class="btn btn-primary href="{{ url_for('upgrade_subscription')}}">Complete Upgrade</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    
+</div>
+{% endblock content%}

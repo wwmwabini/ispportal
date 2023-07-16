@@ -1,7 +1,7 @@
 import re
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField, RadioField
+from wtforms import StringField, EmailField, PasswordField, SubmitField, BooleanField, SelectField, RadioField, DateTimeField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 from flask_login import current_user
 
@@ -94,6 +94,11 @@ class ProfileForm(FlaskForm):
 
 		if not is_phone_number_valid(phone.data):
 			raise ValidationError('Invalid phone number. It should be 10 characters long and use the format of 07xxxxxxxx')
+
+"""class DowngradePlan(FlaskForm):
+	new_plan = StringField("First Name", validators=[DataRequired(), Length(min=2, max=50)])
+	downgrade_date = DateTimeField(validators=[DataRequired()])
+	submit = SubmitField('Schedule Downgrade')"""
 		
 		
 

@@ -3,10 +3,13 @@ from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.events import EVENT_JOB_ADDED
+
 from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm, ProfileForm
 from ispportal.models import Clients, Plans, Subscriptions, News, Transactions, Payments
 from ispportal.functions import (createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription,
-	get_node_status, get_service_status, unsuspend_subscription, renewal_confirmation)
+	get_node_status, get_service_status, unsuspend_subscription, renewal_confirmation, downgrade_scheduler)
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -217,6 +220,53 @@ def renew_subscription():
 	return render_template('dashboard/renew_subscription.html', title="Subscription Renewal", subscription=subscription, form=form)
 
 
+@app.route("/customer/subscription/changeplan", methods=["GET", "POST"])
+@login_required
+def changeplan():
+	date_today = datetime.now()
+	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
+	current_plan_id = subscription.plan_id
+
+	current_plan = Plans.query.filter_by(id=current_plan_id).first()
+
+	other_plans = Plans.query.filter(Plans.id != current_plan_id).all()
+
+	if request.method == "POST":
+		subscription_id = request.form.get('subscriptionid')
+		new_plan_id = request.form.get('newplanid')
+		downgrade_date = request.form.get('expirydate')
+
+		#Schedule downgrade event to occur at specific time
+		try:
+			scheduler = BackgroundScheduler()
+			scheduler.add_job(downgrade_scheduler, 'date', run_date = downgrade_date, args=[subscription_id, new_plan_id])
+			scheduler.start()
+
+			message = "Downgrade task successfully scheduled for " + downgrade_date
+			message_state = "success"
+		except Exception as e:
+			print(e)
+			message = "Downgrade task failed to get scheduled. Please refresh page and try again or contact support."
+			message_state = "danger"
+
+		flash(message, message_state)
+
+			 
+		#prevent reschedule of a scheduled upgrade unless previous is cancelled
+
+		return redirect(url_for('changeplan'))
+
+
+	return render_template('dashboard/changeplan.html', title="Change Plan", date_today=date_today, subscription=subscription, current_plan=current_plan, other_plans=other_plans)
+
+
+@app.route("/customer/subscription/payments/upgrade", methods=["GET", "POST"])
+@login_required
+def upgrade_subscription():
+	return render_template('dashboard/upgrade_subscription.html')
+
+
+
 @app.route("/customer/profile", methods=["GET", "POST"])
 @login_required
 def profile():
@@ -268,3 +318,4 @@ def datausage():
 @login_required
 def managecredit():
 	return render_template('dashboard/managecredit.html', title="Manage Credit")
+

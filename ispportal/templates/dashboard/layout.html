@@ -51,7 +51,7 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link" href="#">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>{{title}}</span></a>
             </li>
@@ -76,6 +76,7 @@
                         <h6 class="collapse-header">Subscription Options:</h6>
                         <a class="collapse-item" href="{{ url_for('renew_subscription')}}">Renew</a>
                         <a class="collapse-item" href="{{ url_for('managecredit')}}">Manage Credit</a>
+                        <a class="collapse-item" href="{{ url_for('changeplan')}}">Change Plan</a>
                     </div>
                 </div>
             </li>
@@ -320,7 +321,7 @@
       new window.IntaSend({
           publicAPIKey: "{{intasend_publishablekey}}",
           redirectURL: "{{intasend_redirecturl}}",
-          live: {{intasend_liveness}} // set to true when going live
+          live: "{{intasend_liveness}}" // set to true when going live
       })
       .on("COMPLETE", (results) => console.log(results))
       .on("FAILED", (results) => console.log(results))

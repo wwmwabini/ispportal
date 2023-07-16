@@ -294,3 +294,29 @@ def renewal_confirmation(client_id, subscription_id, transaction_id):
 
 	return 0
 
+
+
+"""
+OTHER FUNCTIONS
+"""
+
+#Downgrade Scheduler
+def downgrade_scheduler(subscription_id, new_plan_id):
+	print("Commencing downgrade...")
+	with app.app_context():
+		sub = Subscriptions.query.filter_by(id=subscription_id).first()
+
+		sub.plan_id = new_plan_id
+		db.session.commit()
+
+		#Write code to call proxmox and reduce resources for VM
+		#Write code to send confirmation email to owner once process succeeds 
+
+		print("Completed downgrade")
+
+	return 0
+
+
+#Function to check if job schedule was done successfully
+def downgrade_scheduler_listener():
+	pass

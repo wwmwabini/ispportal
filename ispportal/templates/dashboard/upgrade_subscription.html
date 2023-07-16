@@ -1,0 +1,95 @@
+{% extends 'dashboard/layout.html' %}
+{% block content %}
+<div class="container">
+  
+  <h1>Change Plan Payment</h1>
+
+
+  <div class="">
+	 <h5 class="">Subscription Details:</h5>
+      <p>
+   	   Subscription Name: {{subscription.hostname}}<br> 
+   	   Expiry Date: {{subscription.expirydate.strftime('%d/%m/%Y at %H:%M h')}}<br>
+
+   	   {% if subscription.status == 'running' %}
+   	   	Status: <span class="text-success">{{subscription.status}}</span><br>
+   	   {% elif subscription.status == 'stopped' or subscription.status == 'deleted'%}
+   	   	Status: <span class="text-warning">{{subscription.status}}</span><br>
+   	   {% elif subscription.status == 'pending' or subscription.status == 'suspended'%}
+   	   	Status: <span class="text-danger">{{subscription.status}}</span><br>
+   	   {% else %}
+   	   	Status: <span class="text-gray-800">{{subscription.status}}</span><br>
+   	   {% endif %}
+      </p>      
+  </div>
+
+  <form action="" method="POST" >
+  	{{ form.csrf_token }}
+  
+	  <div class="row row-cols-1 row-cols-md-3">
+
+      {% if form.paymentmethod.errors %}
+        {{ form.paymentmethod(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.paymentmethod.errors %}
+                <span> {{ error }} </span>
+              {%endfor%}
+          </div>
+      {% else %}
+		    {% for subfield in form.paymentmethod %}
+			    {% if subfield.data == 'mpesa' %}
+			    <div class="col px-3 ">
+			      <div class="card border">
+			        <div class="card-body">
+			          <h5 class="card-title ">{{subfield.label}}</h5>
+			          <div class="form-check form-switch text-center">
+			          	{{ subfield(checked=True, class="card-text form-check-input")}}
+			          </div>
+			        </div>
+			      </div>
+			    </div>
+			    {% else%}
+			    <div class="col px-3 ">
+			      <div class="card border">
+			        <div class="card-body">
+			          <h5 class="card-title ">{{subfield.label}}</h5>
+			          <div class="form-check form-switch text-center">
+			          	{{ subfield(disabled=True, class="card-text form-check-input")}}
+			          </div>
+			        </div>
+			      </div>
+			    </div>
+			    {% endif %}
+		    {% endfor %}
+		    {% endif %}
+	  </div>
+
+
+	  <div class="mt-5">
+        {{ form.paymentreference.label(class="form-label")}}
+
+        {% if form.paymentreference.errors %}
+          {{ form.paymentreference(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+             paymentreference   
+             		{% for error in form.paymentreference.errors %}
+                  <span> {{ error }} </span>
+                {%endfor%}
+            </div>
+        {% else %}
+          {{form.paymentreference(class="form-control form-control-md col-md-5")}}
+        {% endif %}
+      </div>
+
+      <div class="mt-3 mb-5">
+        {{ form.submit()}}
+      </div>
+    </form>
+
+      <span>*All payments made are subject to our Terms of Service.</span>
+
+
+</div>
+
+  
+{% endblock content%}
