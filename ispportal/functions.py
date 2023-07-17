@@ -7,7 +7,7 @@ from flask_mail import Message
 from dotenv import load_dotenv
 from datetime import datetime
 
-from ispportal import mail, app, bcrypt, db
+from ispportal import mail, app, bcrypt, db, scheduler
 
 load_dotenv()
 
@@ -228,7 +228,7 @@ SMS AND EMAIL SENDING FUNCTIONS START HERE
 #Registration welcome message
 def welcomeemail(email, firstname, username):
 	msg = Message("Your ISP Portal Details", sender=(os.environ.get('MAIL_DEFAULT_SENDER_NAME'), os.environ.get('MAIL_DEFAULT_SENDER')), recipients=[email])
-	msg.html = render_template('auth/message_register.html', firstname=firstname, login_url=login_url,username=username)
+	msg.html = render_template('auth/message_register.html', firstname=firstname, login_url=os.environ.get("BASE_URL"),username=username)
 	msg.reply_to = os.environ.get('MAIL_DEFAULT_SENDER')
 	mail.send(msg)
 
@@ -302,7 +302,7 @@ OTHER FUNCTIONS
 
 #Downgrade Scheduler
 def downgrade_scheduler(subscription_id, new_plan_id):
-	print("Commencing downgrade...")
+	print("INFO::Commencing downgrade for subscription ID ", subscription_id, "...")
 	with app.app_context():
 		sub = Subscriptions.query.filter_by(id=subscription_id).first()
 
@@ -312,7 +312,7 @@ def downgrade_scheduler(subscription_id, new_plan_id):
 		#Write code to call proxmox and reduce resources for VM
 		#Write code to send confirmation email to owner once process succeeds 
 
-		print("Completed downgrade")
+		print("INFO::Downgrade completed.")
 
 	return 0
 

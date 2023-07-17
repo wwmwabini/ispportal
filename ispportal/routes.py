@@ -1,10 +1,11 @@
-from ispportal import app, bcrypt, db
+import os
+
+from ispportal import app, bcrypt, db, scheduler
 from flask import render_template, redirect, flash, url_for, request
 from flask_login import login_user, logout_user, current_user, login_required
 from datetime import datetime, timedelta
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.events import EVENT_JOB_ADDED
+
 
 from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm, ProfileForm
 from ispportal.models import Clients, Plans, Subscriptions, News, Transactions, Payments
@@ -235,11 +236,12 @@ def changeplan():
 		subscription_id = request.form.get('subscriptionid')
 		new_plan_id = request.form.get('newplanid')
 		downgrade_date = request.form.get('expirydate')
+		downgrade_date = "2023-07-16 20:16:10.504673"
 
 		#Schedule downgrade event to occur at specific time
 		try:
-			scheduler = BackgroundScheduler()
-			scheduler.add_job(downgrade_scheduler, 'date', run_date = downgrade_date, args=[subscription_id, new_plan_id])
+			scheduler.add_jobstore('sqlalchemy', url=os.environ.get('DATABASE_URI'))
+			scheduler.add_job(downgrade_scheduler, 'date', run_date = downgrade_date, args=[subscription_id, new_plan_id], misfire_grace_time=2592000)
 			scheduler.start()
 
 			message = "Downgrade task successfully scheduled for " + downgrade_date

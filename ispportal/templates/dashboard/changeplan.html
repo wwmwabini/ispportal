@@ -58,7 +58,11 @@
                             <tbody>
                             <tr>
                                 <td class="text-capitalize font-weight-bold">{{current_plan.name}} => {{new_plan.name}}</td>
+                                {% if upgrade_price > 0%}
                                 <td>sh. {{upgrade_price}}</td>
+                                {% else %}
+                                <td>sh. 0.0</td>
+                                {% endif %}
                             </tr>
                             </tbody>
                         </table>
@@ -80,6 +84,25 @@
 
                                 <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
                                 <button class="btn btn-danger" type="submit">Schedule Downgrade</button>
+                            </form>
+                        </div>
+
+                        {% elif upgrade_price == 0 %}
+                        <div class="bg-warning text-center text-white">
+                            <small>
+                                It is not possible to change the subscription plan on the expiry day. ({{subscription.expirydate.strftime('%d/%m/%Y')}}). Please renew the subscription first then change the subscription plan.
+                            </small>
+                        </div>
+                        
+                        <div class="modal-footer">
+
+                            <form action="" method="POST">
+                                <input type="hidden" id="subscriptionid" name="subscriptionid" value="{{subscription.id}}">
+                                <input type="hidden" id="newplanid" name="newplanid" value="{{new_plan.id}}">
+                                <input type="hidden" id="expirydate" name="expirydate" value="{{subscription.expirydate}}">
+
+                                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                                <a class="btn btn-warning" href="url_for('renew_subscription')">Renew Subscription</a>
                             </form>
                         </div>
 

@@ -7,6 +7,11 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.events import EVENT_JOB_ADDED
+
+
+
 from dotenv import load_dotenv
 
 
@@ -18,7 +23,7 @@ app = Flask(__name__)
 
 #database
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////home/mwabini/ispportal.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -37,6 +42,8 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 mail = Mail(app)
 
+#apscheduler
+scheduler = BackgroundScheduler()
 
 @login_manager.unauthorized_handler
 def unauthorized():

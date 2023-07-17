@@ -1,4 +1,4 @@
-from ispportal import app
+from ispportal import app, scheduler
 
 
 if __name__ == "__main__":
