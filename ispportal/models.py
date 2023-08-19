@@ -15,6 +15,7 @@ class Clients(db.Model, UserMixin):
 	phone = db.Column(db.String(13), nullable=False, unique=True)
 	username = db.Column(db.String(15), nullable=False, unique=True)
 	password = db.Column(db.String(60), nullable=False)
+	profile_image = db.Column(db.String(50), nullable=True, default='default.svg')
 	registrationdate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 	region = db.Column(db.Enum('Thika'), nullable=False, server_default="Thika")
 	subscriptions = db.relationship('Subscriptions', backref='client')

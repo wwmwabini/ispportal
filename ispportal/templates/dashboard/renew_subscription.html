@@ -2,13 +2,13 @@
 {% block content %}
 <div class="container">
   
-  <h1>Renew Your Subscription</h1>
+  <h1>Renew Subscription</h1>
 
 
   <div class="">
-	 <h5 class="">Subscription Details:</h5>
+	 <h3 class="">Subscription Details:</h3>
       <p>
-   	   Subscription Name: {{subscription.hostname}}<br> 
+   	   Host Name: {{subscription.hostname}}<br> 
    	   Expiry Date: {{subscription.expirydate.strftime('%d/%m/%Y at %H:%M h')}}<br>
 
    	   {% if subscription.status == 'running' %}
@@ -20,6 +20,7 @@
    	   {% else %}
    	   	Status: <span class="text-gray-800">{{subscription.status}}</span><br>
    	   {% endif %}
+	   Amount: sh. {{subscription.price}}
       </p>      
   </div>
 

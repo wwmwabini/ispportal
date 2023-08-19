@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 
 
 
-from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm, ProfileForm
+from ispportal.forms import RegisterForm, LoginForm, ForgotUsername, ForgotPassword, RenewSubscriptionForm, ProfileForm, UpgradePlan
 from ispportal.models import Clients, Plans, Subscriptions, News, Transactions, Payments
 from ispportal.functions import (createusername, remindusernameviaemail, remindusernameviasms, welcomeemail, createsecurepassword, sendresetpassword, create_subscription,
-	get_node_status, get_service_status, unsuspend_subscription, renewal_confirmation, downgrade_scheduler)
+	get_node_status, get_service_status, unsuspend_subscription, renewal_confirmation, downgrade_scheduler, do_upgrade, save_picture, delete_old_picture)
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -166,8 +166,17 @@ def logout():
 @login_required
 def dashboard():
 	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
-	servicestatus = get_service_status(subscription.vmid)
-	nodestatus = get_node_status(subscription.node)
+
+	try:
+		servicestatus = get_service_status(subscription.vmid)
+	except Exception as e1:
+		servicestatus = "unknown"
+
+	try:
+		nodestatus = get_node_status(subscription.node)
+	except Exception as e2:
+		nodestatus="offline"
+
 	news = News.query.order_by(News.created_at.desc()).limit(3).all()
 
 	return render_template('dashboard/dashboard.html', title='Dashboard', subscription=subscription, servicestatus=servicestatus, nodestatus=nodestatus, news=news)
@@ -233,30 +242,48 @@ def changeplan():
 	other_plans = Plans.query.filter(Plans.id != current_plan_id).all()
 
 	if request.method == "POST":
-		subscription_id = request.form.get('subscriptionid')
-		new_plan_id = request.form.get('newplanid')
-		downgrade_date = request.form.get('expirydate')
-		downgrade_date = "2023-07-16 20:16:10.504673"
+		if request.form.get('changeplansubmit') == 'downgrade':
+			#DOWNGRADE
+			subscription_id = request.form.get('subscriptionid')
+			new_plan_id = request.form.get('newplanid')
+			downgrade_date = request.form.get('expirydate')
 
-		#Schedule downgrade event to occur at specific time
-		try:
-			scheduler.add_jobstore('sqlalchemy', url=os.environ.get('DATABASE_URI'))
-			scheduler.add_job(downgrade_scheduler, 'date', run_date = downgrade_date, args=[subscription_id, new_plan_id], misfire_grace_time=2592000)
-			scheduler.start()
+			#Schedule downgrade event to occur at specific time
+			try:
+				scheduler.add_jobstore('sqlalchemy', url=os.environ.get('DATABASE_URI'))
+				scheduler.add_job(downgrade_scheduler, 'date', run_date = downgrade_date, args=[subscription_id, new_plan_id], misfire_grace_time=2592000)
+				scheduler.start()
 
-			message = "Downgrade task successfully scheduled for " + downgrade_date
-			message_state = "success"
-		except Exception as e:
-			print(e)
-			message = "Downgrade task failed to get scheduled. Please refresh page and try again or contact support."
-			message_state = "danger"
+				message = "Downgrade task successfully scheduled for " + downgrade_date
+				message_state = "success"
+			except Exception as e:
+				print(e)
+				message = "Downgrade task failed to get scheduled. Please refresh page and try again or contact support."
+				message_state = "danger"
 
-		flash(message, message_state)
+			flash(message, message_state)
 
-			 
-		#prevent reschedule of a scheduled upgrade unless previous is cancelled
+				
+			#prevent reschedule of a scheduled upgrade unless previous is cancelled
 
-		return redirect(url_for('changeplan'))
+			return redirect(url_for('changeplan'))
+		else:
+			#UPGRADE
+			subscription_id = request.form.get('subscriptionid')
+			new_plan_id = request.form.get('newplanid')
+
+			try:
+				do_upgrade(subscription_id, new_plan_id)
+				message = "Upgrade task successfully completed."
+				message_state = "success"
+			except Exception as e:
+				print(e)
+				message = "Upgrade task failed. Please contact try again or contact support if this persists."
+				message_state= "danger"
+			
+			flash(message, message_state)
+
+			return redirect(url_for('changeplan'))
 
 
 	return render_template('dashboard/changeplan.html', title="Change Plan", date_today=date_today, subscription=subscription, current_plan=current_plan, other_plans=other_plans)
@@ -265,7 +292,19 @@ def changeplan():
 @app.route("/customer/subscription/payments/upgrade", methods=["GET", "POST"])
 @login_required
 def upgrade_subscription():
-	return render_template('dashboard/upgrade_subscription.html')
+
+	subscription = Subscriptions.query.filter_by(client_id=current_user.id).first()
+
+	form = UpgradePlan()
+
+	if request.method=="POST":
+		new_plan = request.form.get('newplanid')
+		upgrade_price = request.form.get('upgradeprice')
+
+		print(new_plan)
+		print(upgrade_price)
+
+	return render_template('dashboard/upgrade_subscription.html', subscription=subscription, form=form)
 
 
 
@@ -281,7 +320,7 @@ def profile():
 		user_email_check = Clients.query.filter_by(email=form.email.data).first()
 		user_phone_check = Clients.query.filter_by(phone=form.phone.data).first()
 
-		if client.email == form.email.data and client.firstname == form.firstname.data and client.lastname == form.lastname.data and client.phone == form.phone.data:
+		if client.profile_image == form.profile_pic.data and client.email == form.email.data and client.firstname == form.firstname.data and client.lastname == form.lastname.data and client.phone == form.phone.data:
 			flash('You must update at least one field before saving changes.', 'warning')
 			return redirect(url_for('profile'))
 		elif user_email_check and user_email_check.id != current_user.id: #check if user w/ submitted email exists, and is not equal to current user.
@@ -291,17 +330,31 @@ def profile():
 			flash('The phone number submitted is already in use in our system. Please try again', 'warning')
 			return redirect(url_for('profile'))
 		else:
+			if form.profile_pic.data:
+				old_profile_pic = current_user.profile_image
+				old_profile_pic_path = os.path.join(app.root_path, 'static/img/profile_pics', old_profile_pic)
+
+				profile_pic_name = save_picture(form.profile_pic.data)
+				current_user.profile_image = profile_pic_name
+
 			client.firstname = form.firstname.data
 			client.lastname = form.lastname.data
 			client.email = form.email.data
 			client.phone = form.phone.data
 
 			db.session.commit()
+
+			if old_profile_pic != 'default.svg':
+				delete_old_picture(old_profile_pic_path)
+
 			flash('Your details have been successfully updated.', 'success')
 			return redirect(url_for('profile'))
+		
+	
+	profile_pic_path = url_for('static', filename='img/profile_pics/'+current_user.profile_image)
 
 
-	return render_template('dashboard/profile.html', title="My Profile", form=form)
+	return render_template('dashboard/profile.html', title="My Profile", form=form, profile_pic_path=profile_pic_path)
 
 @app.route("/customer/activity/transactions", methods=["GET", "POST"])
 @login_required

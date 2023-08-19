@@ -9,7 +9,7 @@
 
         <p>Select one of the plans to change to from the list below</p>
         {% if date_today > subscription.expirydate%}
-        <div class="bg-warning">
+        <div class="alert alert-info d-inline-flex p-2 bd-highlight" role="alert">
             <i class="fa-face-sad-tear"></i>
             <p>Your subscription is currently expired. Please renew the subscription first to change the plan.</p>
         </div>
@@ -68,7 +68,7 @@
                         </table>
 
                         {% if upgrade_price < 0 %}
-                        <div class="bg-warning text-center text-white">
+                        <div class="alert alert-info d-inline-flex p-2 bd-highlight" role="alert">
                             <small>
                                 You are downgrading to a lower package. By confirming this selection, your subscription will be automatically downgraded at the start
                                 of the next billing cycle ({{subscription.expirydate.strftime('%d/%m/%Y')}})
@@ -81,14 +81,15 @@
                                 <input type="hidden" id="subscriptionid" name="subscriptionid" value="{{subscription.id}}">
                                 <input type="hidden" id="newplanid" name="newplanid" value="{{new_plan.id}}">
                                 <input type="hidden" id="expirydate" name="expirydate" value="{{subscription.expirydate}}">
+                                <input type="hidden" id="changeplansubmit" name="changeplansubmit" value="downgrade">
 
                                 <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                                <button class="btn btn-danger" type="submit">Schedule Downgrade</button>
+                                <button class="btn btn-danger" id="downgradeFormSubmit" type="submit">Schedule Downgrade</button>
                             </form>
                         </div>
 
                         {% elif upgrade_price == 0 %}
-                        <div class="bg-warning text-center text-white">
+                        <div class="alert alert-warning d-inline-flex p-2 bd-highlight" role="alert">
                             <small>
                                 It is not possible to change the subscription plan on the expiry day. ({{subscription.expirydate.strftime('%d/%m/%Y')}}). Please renew the subscription first then change the subscription plan.
                             </small>
@@ -96,26 +97,29 @@
                         
                         <div class="modal-footer">
 
-                            <form action="" method="POST">
-                                <input type="hidden" id="subscriptionid" name="subscriptionid" value="{{subscription.id}}">
-                                <input type="hidden" id="newplanid" name="newplanid" value="{{new_plan.id}}">
-                                <input type="hidden" id="expirydate" name="expirydate" value="{{subscription.expirydate}}">
-
-                                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                                <a class="btn btn-warning" href="url_for('renew_subscription')">Renew Subscription</a>
-                            </form>
+                            <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                            <a class="btn btn-warning" href="url_for('renew_subscription')">Renew Subscription</a>
                         </div>
 
                         {% else %}
-                        <div class="bg-warning text-center text-white">
-                            <small>Upgrade price is calculated from the difference between today and the service expiry date (i.e {{(subscription.expirydate - date_today).days}} days) multiplied by 
-                                the daily billing rate of the new plan less credit for the remainder of the previous billing plan.
+                        <div class="alert alert-info d-inline-flex p-2 bd-highlight" role="alert">
+                            <small>
+                                The upgrade price is determined by multiplying the number of days remaining until the service expiry date (i.e {{(subscription.expirydate - date_today).days}} days) by the daily billing rate of the new plan, 
+                                minus any credit for the unused portion of the previous billing plan.
                             </small>
                         </div>
                         
                         <div class="modal-footer">
-                            <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                            <a class="btn btn-primary href="{{ url_for('upgrade_subscription')}}">Complete Upgrade</a>
+                            
+                            <form action="" method="POST">
+                                <input type="hidden" id="subscriptionid" name="subscriptionid" value="{{subscription.id}}">
+                                <input type="hidden" id="newplanid" name="newplanid" value="{{new_plan.id}}">
+                                <input type="hidden" id="expirydate" name="expirydate" value="{{subscription.expirydate}}">
+                                <input type="hidden" id="changeplansubmit" name="changeplansubmit" value="upgrade">
+
+                                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                                <button class="btn btn-primary" id="upgradeFormSubmit" type="submit">Complete Upgrade</button>
+                            </form>
                         </div>
                         {% endif %}
                     </div>

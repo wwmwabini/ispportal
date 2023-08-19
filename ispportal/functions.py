@@ -1,4 +1,5 @@
 import random, re, os, requests, secrets, string, time, json
+import timeout_decorator
 
 from ispportal.models import Clients, Plans, Subscriptions, Transactions
 
@@ -6,6 +7,7 @@ from flask import render_template, jsonify
 from flask_mail import Message
 from dotenv import load_dotenv
 from datetime import datetime
+from PIL import Image
 
 from ispportal import mail, app, bcrypt, db, scheduler
 
@@ -139,6 +141,7 @@ def get_subscription_details(vmid):
 
 
 #Get the status of the node, whether online or offline etc
+@timeout_decorator.timeout(2, use_signals=False)
 def get_node_status(node):
 
 	#node_endpoint = '/api2/json/nodes/'+node+'/status'
@@ -164,6 +167,7 @@ def get_node_status(node):
 
 
 #Get the status of the vm/service, whether online or offline etc
+@timeout_decorator.timeout(2, use_signals=False)
 def get_service_status(vmid):
 
 	service_endpoint = '/api2/json/nodes/'+proxmox_node+'/lxc/'+str(vmid)+'/status/current'
@@ -320,3 +324,48 @@ def downgrade_scheduler(subscription_id, new_plan_id):
 #Function to check if job schedule was done successfully
 def downgrade_scheduler_listener():
 	pass
+
+
+#Upgrade
+def do_upgrade(subscription_id, new_plan_id):
+	print("INFO::Commencing upgrade for subscription ID ", subscription_id, "...")
+	with app.app_context():
+		sub = Subscriptions.query.filter_by(id=subscription_id).first()
+
+		sub.plan_id = new_plan_id
+		db.session.commit()
+
+		#Write code to call proxmox and increase resources for VM
+		#Write code to schedule deduction of money from payment gateway or suspend service if unable to deduct for a while
+		#Write code to send confirmation email to owner once process succeeds 
+
+		print("INFO::Upgrade completed.")
+
+
+#Profile Picture
+def save_picture(picture_from_form):
+	random_pic_name = secrets.token_hex(42)
+	_, pic_extension = os.path.splitext(picture_from_form.filename)
+	picture_name = random_pic_name + pic_extension
+	picture_path = os.path.join(app.root_path, 'static/img/profile_pics', picture_name)
+
+	img = resize_picture(picture_from_form)
+
+	img.save(picture_path)
+
+	return picture_name
+
+def resize_picture(picture_from_form):
+	output_size = (250,250)
+	image = Image.open(picture_from_form)
+	image.thumbnail(output_size)
+	
+	return image
+
+
+def delete_old_picture(old_picture_path):
+	if os.path.isfile(old_picture_path):
+		try:
+			os.remove(old_picture_path)
+		except Exception as e:
+			print('Error. Could not delete file.', e)

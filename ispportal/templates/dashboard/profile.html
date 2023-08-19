@@ -6,8 +6,10 @@
 		<div class="card mb-3" style="max-width: 1080px;">
 		  <div class="row g-0">
 		    <div class="col-md-4">
-		      <img class="img-profile text-center p-3" src="/static/img/undraw_profile.svg" style="width: 250px;">
+		      <img class="img-profile rounded-circle text-center p-3" src="{{profile_pic_path}}" style="width: 250px; height: 250px;">
 		    </div>
+
+			
 		    <div class="col-md-8">
 		      <div class="card-body">
 		        <h5 class="card-title fw-bold">Details</h5>
@@ -25,7 +27,7 @@
 		<hr>
 
 
-		<form action="" method="POST" class="row g-3">
+		<form action="" method="POST" class="row g-3" enctype="multipart/form-data">
         {{ form.csrf_token }}
 
         <div class='row g-3 col-6 p-2'>
@@ -95,6 +97,22 @@
 	            {% endif %}
 	          </div>
           </div>
+		  <div class='row g-3 col-12 p-2'>
+			<div class="">
+			  {{ form.profile_pic.label(class="form-label")}}
+
+			  {% if form.profile_pic.errors %}
+				{{ form.profile_pic(class="form-control is-invalid") }}
+				  <div class="invalid-feedback">
+					  {% for error in form.profile_pic.errors %}
+						<span> {{ error }} </span>
+					  {%endfor%}
+				  </div>
+			  {% else %}
+				{{form.profile_pic(class="form-control form-control-lg")}}
+			  {% endif %}
+			</div>
+		</div>
           <div class="text-center mb-5">
           	{{ form.submit(class="btn btn-danger btn-lg")}}
           </div>
