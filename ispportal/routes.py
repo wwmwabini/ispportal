@@ -320,7 +320,9 @@ def profile():
 		user_email_check = Clients.query.filter_by(email=form.email.data).first()
 		user_phone_check = Clients.query.filter_by(phone=form.phone.data).first()
 
-		if client.profile_image == form.profile_pic.data and client.email == form.email.data and client.firstname == form.firstname.data and client.lastname == form.lastname.data and client.phone == form.phone.data:
+		print(form.profile_pic.data)
+
+		if form.profile_pic.data is None and client.email == form.email.data and client.firstname == form.firstname.data and client.lastname == form.lastname.data and client.phone == form.phone.data:
 			flash('You must update at least one field before saving changes.', 'warning')
 			return redirect(url_for('profile'))
 		elif user_email_check and user_email_check.id != current_user.id: #check if user w/ submitted email exists, and is not equal to current user.
@@ -344,7 +346,7 @@ def profile():
 
 			db.session.commit()
 
-			if old_profile_pic != 'default.svg':
+			if form.profile_pic.data and old_profile_pic != 'default.svg':
 				delete_old_picture(old_profile_pic_path)
 
 			flash('Your details have been successfully updated.', 'success')

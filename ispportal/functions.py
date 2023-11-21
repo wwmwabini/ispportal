@@ -3,7 +3,7 @@ import timeout_decorator
 
 from ispportal.models import Clients, Plans, Subscriptions, Transactions
 
-from flask import render_template, jsonify
+from flask import render_template, jsonify, flash
 from flask_mail import Message
 from dotenv import load_dotenv
 from datetime import datetime
@@ -350,8 +350,11 @@ def save_picture(picture_from_form):
 	picture_path = os.path.join(app.root_path, 'static/img/profile_pics', picture_name)
 
 	img = resize_picture(picture_from_form)
-
-	img.save(picture_path)
+	try:
+		img.save(picture_path)
+	except Exception as e:
+		flash('Error! Could not save new picture.', 'danger')
+		print('Error! Could not save new picture.', e)
 
 	return picture_name
 
